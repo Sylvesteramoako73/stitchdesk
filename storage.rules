@@ -1,0 +1,20 @@
+rules_version = '2';
+// Style photos and price list images. Each business can only write inside its
+// own folder, which is enforced with the tenantId custom claim set at login.
+// Images are readable by URL so they show on job cards and receipts.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /tenants/{tenantId}/{folder}/{file} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.auth.token.tenantId == tenantId
+                   && folder in ['orders', 'catalogue']
+                   && request.resource.size < 8 * 1024 * 1024
+                   && request.resource.contentType.matches('image/.*');
+      allow delete: if request.auth != null && request.auth.token.tenantId == tenantId;
+    }
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
