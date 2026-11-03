@@ -43,14 +43,15 @@ export function OrderForm({ clients, staff, catalogue, order, defaultClientId, o
     styleImages:   order?.styleImages ?? [] as string[],
     fabricSource:  order?.fabricSource ?? 'client' as 'client' | 'shop',
     fabricNotes:   order?.fabricNotes ?? '',
-    price:         order?.price ?? 0,
-    discount:      order?.discount ?? 0,
+    // Empty rather than 0 on a new order, so typing 500 does not give 0500
+    price:         order?.price ?? ('' as number | ''),
+    discount:      order?.discount ?? ('' as number | ''),
     isRush:        order?.isRush ?? false,
     dueDate:       order?.dueDate ?? addDaysISO(todayISO(), 14),
     fittingDate:   order?.fittingDate ?? '',
     assignedTo:    order?.assignedTo ?? '',
     measurementId: order?.measurementId ?? '',
-    depositAmount: 0,
+    depositAmount: '' as number | '',
     depositMethod: 'momo' as PaymentMethod,
   })
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) => setF(prev => ({ ...prev, [k]: v }))

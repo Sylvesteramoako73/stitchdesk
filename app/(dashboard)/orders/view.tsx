@@ -1,5 +1,5 @@
 'use client'
-import { useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Plus, Search, LayoutList, Columns3, Zap, ChevronRight, Ruler, Scissors } from 'lucide-react'
@@ -48,6 +48,8 @@ export function DueChip({ order }: { order: Order }) {
 export function OrdersView({ orders: initial, clients, staff, catalogue, openNew, defaultClientId, initialQuery, initialFilter }: Props) {
   const router = useRouter()
   const [orders, setOrders] = useState(initial)
+  // Take fresh orders from the server when the page data changes, for example after creating an order
+  useEffect(() => { setOrders(initial) }, [initial])
   const [showForm, setShowForm] = useState(openNew)
   const [query, setQuery]   = useState(initialQuery)
   const [filter, setFilter] = useState<Filter>(

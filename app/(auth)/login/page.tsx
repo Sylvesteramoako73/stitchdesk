@@ -90,7 +90,7 @@ export default function LoginPage() {
       {/* ── Left brand panel (desktop only) ── */}
       <div className="hidden lg:flex lg:w-[420px] xl:w-[480px] bg-indigo-600 flex-col justify-between p-10 shrink-0">
         <div>
-          <Image src="/logo.png" alt="StitchDesk" width={194} height={48} className="h-12 w-auto object-contain brightness-0 invert" priority />
+          <Image src="/logo.png" alt="StitchDesk" width={204} height={48} className="h-12 w-auto object-contain brightness-0 invert" priority />
         </div>
         <div className="space-y-6">
           <div>
@@ -125,7 +125,7 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col bg-gray-50">
         {/* Mobile header */}
         <div className="lg:hidden bg-indigo-600 px-6 py-5 flex items-center gap-3">
-          <Image src="/logo.png" alt="StitchDesk" width={146} height={36} className="h-9 w-auto object-contain brightness-0 invert" priority />
+          <Image src="/logo.png" alt="StitchDesk" width={153} height={36} className="h-9 w-auto object-contain brightness-0 invert" priority />
         </div>
 
         <div className="flex-1 flex items-center justify-center p-6">

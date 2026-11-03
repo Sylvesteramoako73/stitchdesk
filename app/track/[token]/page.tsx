@@ -45,7 +45,9 @@ export default async function TrackPage({ params }: { params: { token: string } 
             <div>
               <p className="text-xs text-gray-500">Order {o.orderNumber}</p>
               <p className="font-bold text-lg leading-tight mt-0.5">{o.title}</p>
-              <p className="text-sm text-gray-500">{o.garmentType}{o.quantity > 1 ? ` x${o.quantity}` : ''}</p>
+              {(o.garmentType !== o.title || o.quantity > 1) && (
+                <p className="text-sm text-gray-500">{o.garmentType !== o.title ? o.garmentType : ''}{o.quantity > 1 ? ` x${o.quantity}` : ''}</p>
+              )}
             </div>
             <span className={`badge ${cancelled ? 'badge-red' : o.status === 'ready' || o.status === 'collected' ? 'badge-green' : 'badge-blue'} shrink-0`}>
               {STATUS_LABEL[o.status]}

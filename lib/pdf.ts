@@ -253,6 +253,11 @@ export async function downloadApprenticeCertificate(apprentice: Apprentice) {
 
 type ShopInfo = { name: string; phone?: string; address?: string }
 
+// The title falls back to the garment type, so only add the type when it says something new
+function styleLabel(order: Order) {
+  return order.garmentType && order.garmentType !== order.title ? `${order.title} (${order.garmentType})` : order.title
+}
+
 function pdfDate(iso: string) {
   return new Date(iso.length === 10 ? iso + 'T12:00:00Z' : iso)
     .toLocaleDateString('en-GH', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -305,7 +310,7 @@ export async function downloadOrderReceipt(order: Order, shop: ShopInfo, trackin
   doc.text('ITEM', margin + 2, y); doc.text('QTY', pageW - margin - 40, y); doc.text('AMOUNT', pageW - margin - 2, y, { align: 'right' })
   y += 9
   doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(25, 28, 40)
-  const itemLines = doc.splitTextToSize(`${order.title} (${order.garmentType})`, pageW - margin * 2 - 50)
+  const itemLines = doc.splitTextToSize(styleLabel(order), pageW - margin * 2 - 50)
   doc.text(itemLines, margin + 2, y)
   doc.text(String(order.quantity), pageW - margin - 40, y)
   doc.text(GHS(order.price), pageW - margin - 2, y, { align: 'right' })
@@ -363,7 +368,7 @@ export async function downloadJobCard(order: Order, shop: ShopInfo) {
   keyValue(doc, 'Ready by', pdfDate(order.dueDate), margin + 110, y)
   keyValue(doc, 'Fitting', order.fittingDate ? pdfDate(order.fittingDate) : 'None', margin + 150, y)
   y += 14
-  keyValue(doc, 'Garment', `${order.title} (${order.garmentType}) x${order.quantity}`, margin, y)
+  keyValue(doc, 'Garment', `${styleLabel(order)} x${order.quantity}`, margin, y)
   keyValue(doc, 'Assigned to', order.assignedName ?? 'Unassigned', margin + 110, y)
   y += 14
   keyValue(doc, 'Fabric', order.fabricSource === 'shop' ? 'Shop supplies' : 'Client brought fabric', margin, y)

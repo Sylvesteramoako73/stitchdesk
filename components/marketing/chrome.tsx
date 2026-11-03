@@ -16,7 +16,7 @@ export function Nav() {
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2" aria-label="StitchDesk home">
-          <Image src="/logo.png" alt="StitchDesk" width={162} height={40} className="h-10 w-auto object-contain" priority />
+          <Image src="/logo.png" alt="StitchDesk" width={170} height={40} className="h-10 w-auto object-contain" priority />
         </Link>
         <nav aria-label="Main" className="hidden md:flex items-center gap-7 text-sm text-gray-600">
           {NAV.map(n => (
@@ -90,7 +90,7 @@ export function Footer() {
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col md:flex-row items-start justify-between gap-10 pb-10 border-b border-slate-700">
           <div className="max-w-xs">
-            <Image src="/logo.png" alt="StitchDesk" width={146} height={36} className="h-9 w-auto object-contain brightness-0 invert mb-4" />
+            <Image src="/logo.png" alt="StitchDesk" width={153} height={36} className="h-9 w-auto object-contain brightness-0 invert mb-4" />
             <p className="text-slate-400 text-sm leading-relaxed">Workshop software for fashion designers and tailors in Ghana and West Africa.</p>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 text-sm">
