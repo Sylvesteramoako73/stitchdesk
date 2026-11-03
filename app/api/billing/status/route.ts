@@ -14,7 +14,8 @@ export async function GET() {
     plan:               tenant.plan,
     subscriptionStatus: tenant.subscriptionStatus,
     trialEndsAt:        tenant.trialEndsAt,
-    salonName:          tenant.name,
+    paidUntil:          tenant.paidUntil ?? null,
+    salonName:         tenant.name,
     slug:               tenant.slug,
   })
 }

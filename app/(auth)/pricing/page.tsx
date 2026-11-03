@@ -3,15 +3,16 @@ import { useState, useEffect } from 'react'
 import { Check, Loader2, Scissors, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 
-import { BILLING_PLANS } from '@/lib/billing/plans'
+import { BILLING_PLANS, isPaidPlanActive } from '@/lib/billing/plans'
 
 const PLANS = BILLING_PLANS.map(p => ({ ...p, period: 'month' }))
 
 export default function PricingPage() {
-  const [user, setUser]         = useState<{ name: string; email?: string; plan: string; trialEndsAt: string; tenantId: string } | null>(null)
+  const [user, setUser]         = useState<{ name: string; email?: string; plan: string; trialEndsAt: string; tenantId: string; subscriptionStatus: string | null; paidUntil: string | null } | null>(null)
   const [, setLoading]          = useState(true)
   const [paying, setPaying]     = useState<string | null>(null)
   const [success, setSuccess]   = useState<string | null>(null)
+  const [payError, setPayError] = useState<string | null>(null)
 
   useEffect(() => {
     fetch('/api/auth/me').then(r => r.ok ? r.json() : null).then(d => {
@@ -33,6 +34,7 @@ export default function PricingPage() {
   async function handleSubscribe(plan: typeof PLANS[0]) {
     if (!user) { window.location.href = '/signup'; return }
     setPaying(plan.id)
+    setPayError(null)
 
     await new Promise<void>((resolve, reject) => {
       if ((window as any).PaystackPop) { resolve(); return }
@@ -59,6 +61,8 @@ export default function PricingPage() {
         })
         if (res.ok) {
           setSuccess(plan.name)
+        } else {
+          setPayError(`We could not activate your plan. Please contact us with payment reference ${tx.reference}.`)
         }
         setPaying(null)
       },
@@ -115,10 +119,17 @@ export default function PricingPage() {
           </div>
         )}
 
+        {payError && (
+          <div className="mb-8 px-5 py-4 bg-red-50 border border-red-200 rounded-xl text-sm text-red-800">
+            {payError}
+          </div>
+        )}
+
         {/* Plans */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {PLANS.map(plan => {
-            const isCurrent = user?.plan === plan.id
+            // A lapsed plan is not current, so the owner can pay to renew it
+            const isCurrent = user?.plan === plan.id && !!user && isPaidPlanActive(user)
             return (
               <div
                 key={plan.id}

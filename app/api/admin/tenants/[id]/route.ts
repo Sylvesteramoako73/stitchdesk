@@ -11,8 +11,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { subscriptionStatus, trialEndsAt } = body
   if (!subscriptionStatus) return NextResponse.json({ error: 'Missing status' }, { status: 400 })
 
-  const update: Record<string, string> = { subscriptionStatus, updatedAt: new Date().toISOString() }
+  const update: Record<string, string | null> = { subscriptionStatus, updatedAt: new Date().toISOString() }
   if (trialEndsAt) update.trialEndsAt = trialEndsAt
+  // An admin activation has no paid month behind it, so it must not lapse on an old paidUntil
+  if (subscriptionStatus === 'active') update.paidUntil = null
 
   await adminDb.collection('tenants').doc(params.id).update(update)
   return NextResponse.json({ ok: true })

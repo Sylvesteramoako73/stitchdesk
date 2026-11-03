@@ -2,7 +2,7 @@
 import { revalidatePath } from 'next/cache'
 import { adminDb, docData } from '@/lib/firebase-admin'
 import { LocationSchema } from '@/lib/validation'
-import { getTenantId, assertOwned } from '@/lib/auth'
+import { getTenantId, requireTenant, assertOwned } from '@/lib/auth'
 
 export type Location = {
   id: string
@@ -23,11 +23,11 @@ export async function getLocations(): Promise<Location[]> {
 }
 
 export async function createLocation(data: { name: string; address: string; phone: string }): Promise<Location> {
-  const tenantId = await getTenantId()
+  const { tenantId } = await requireTenant()
   const parsed = LocationSchema.parse(data)
   const ref = adminDb.collection('locations').doc()
   const now = new Date().toISOString()
-  const doc = { ...parsed, tenantId: tenantId ?? null, isActive: true, createdAt: now }
+  const doc = { ...parsed, tenantId, isActive: true, createdAt: now }
   await ref.set(doc)
   revalidatePath('/locations')
   return { id: ref.id, ...doc }

@@ -53,20 +53,6 @@ async function assertSameTenant(callerTenantId: string | null, uid: string) {
   }
 }
 
-export async function createUserDoc(uid: string, name: string, email: string): Promise<Role> {
-  // Every new signup is an owner of their own business account
-  const role: Role = 'owner'
-
-  await col().doc(uid).set({
-    name,
-    email,
-    role,
-    createdAt: new Date().toISOString(),
-  })
-
-  return role
-}
-
 export async function updateUserRole(uid: string, role: Role) {
   const { getSessionUser } = await import('@/lib/auth')
   const caller = await getSessionUser()
@@ -74,11 +60,6 @@ export async function updateUserRole(uid: string, role: Role) {
   await assertSameTenant(caller.tenantId, uid)
   await col().doc(uid).update({ role })
   revalidatePath('/settings')
-}
-
-export async function getUserRole(uid: string): Promise<Role> {
-  const doc = await col().doc(uid).get()
-  return (doc.data()?.role as Role) ?? 'staff'
 }
 
 export async function deleteUserAccount(uid: string) {

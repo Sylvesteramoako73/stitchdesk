@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { getSessionUser, getEffectiveLocationId } from '@/lib/auth'
 import { getLocations } from '@/lib/actions/locations'
 import { getTenant } from '@/lib/actions/tenants'
+import { isPaidPlanActive } from '@/lib/billing/plans'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Topbar } from '@/components/layout/topbar'
 import { ToastProvider } from '@/components/ui/toast'
@@ -26,8 +27,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   // Enforce subscription for owners only
   if (user.role === 'owner' && tenant) {
-    // Older accounts have no paidUntil; newer ones lapse when the paid month ends
-    const isActive   = tenant.subscriptionStatus === 'active' && (!tenant.paidUntil || new Date(tenant.paidUntil) > new Date())
+    const isActive   = isPaidPlanActive(tenant)
     const isTrial    = tenant.subscriptionStatus === 'trialing' && new Date(tenant.trialEndsAt) > new Date()
     if (!isActive && !isTrial) redirect('/pricing')
   }

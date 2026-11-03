@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminAuth, adminDb } from '@/lib/firebase-admin'
 import { cookies } from 'next/headers'
-import { createUserDoc } from '@/lib/actions/users'
 import { rateLimit } from '@/lib/rate-limit'
 
 const SESSION_DURATION = 60 * 60 * 24 * 5 * 1000 // 5 days
@@ -21,11 +20,13 @@ export async function POST(req: NextRequest) {
     if (isNewUser) {
       const existing = await adminDb.collection('users').doc(decoded.uid).get()
       if (!existing.exists) {
-        await createUserDoc(
-          decoded.uid,
-          decoded.name ?? decoded.email?.split('@')[0] ?? 'User',
-          decoded.email ?? ''
-        )
+        // Every new signup is an owner of their own business account
+        await adminDb.collection('users').doc(decoded.uid).set({
+          name:      decoded.name ?? decoded.email?.split('@')[0] ?? 'User',
+          email:     decoded.email ?? '',
+          role:      'owner',
+          createdAt: new Date().toISOString(),
+        })
       }
     }
 

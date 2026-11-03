@@ -2,7 +2,7 @@
 import { revalidatePath } from 'next/cache'
 import { adminDb, docData } from '@/lib/firebase-admin'
 import { ExpenseSchema } from '@/lib/validation'
-import { getTenantId, assertOwned } from '@/lib/auth'
+import { getTenantId, requireTenant, getOwnedDoc, assertOwned } from '@/lib/auth'
 
 export type ExpenseCategory =
   | 'rent' | 'fabric' | 'supplies' | 'utilities' | 'wages'
@@ -32,17 +32,16 @@ export async function getExpenses(filters?: { month?: string; locationId?: strin
 export async function createExpense(data: {
   category: ExpenseCategory; description: string; amount: number; date: string; locationId?: string | null
 }): Promise<Expense> {
-  const tenantId = await getTenantId()
+  const { tenantId } = await requireTenant()
   const parsed = ExpenseSchema.parse(data)
   let locationName: string | null = null
   if (parsed.locationId) {
-    const { adminDb } = await import('@/lib/firebase-admin')
-    const locDoc = await adminDb.collection('locations').doc(parsed.locationId).get()
+    const { snap: locDoc } = await getOwnedDoc('locations', parsed.locationId, tenantId)
     locationName = locDoc.data()?.name ?? null
   }
   const ref = adminDb.collection('expenses').doc()
   const now = new Date().toISOString()
-  const doc = { ...parsed, tenantId: tenantId ?? null, locationName, createdAt: now }
+  const doc = { ...parsed, tenantId, locationName, createdAt: now }
   await ref.set(doc)
   revalidatePath('/expenses')
   return { id: ref.id, ...doc } as Expense

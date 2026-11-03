@@ -57,3 +57,9 @@ export function extendPaidUntil(current: string | null | undefined): string {
   base.setMonth(base.getMonth() + 1)
   return base.toISOString()
 }
+
+/** An active plan lapses after paidUntil. Older accounts have no paidUntil and stay active. */
+export function isPaidPlanActive(tenant: { subscriptionStatus?: string | null; paidUntil?: string | null }): boolean {
+  if (tenant.subscriptionStatus !== 'active') return false
+  return !tenant.paidUntil || new Date(tenant.paidUntil) > new Date()
+}

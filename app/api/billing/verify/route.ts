@@ -3,6 +3,16 @@ import { getSessionUser } from '@/lib/auth'
 import { adminDb } from '@/lib/firebase-admin'
 import { planById, extendPaidUntil } from '@/lib/billing/plans'
 
+// Paystack can return metadata as an object or as a JSON string
+function metadataTenantId(metadata: unknown): string | null {
+  try {
+    const parsed = typeof metadata === 'string' ? JSON.parse(metadata) : metadata
+    return (parsed as { tenantId?: string } | null)?.tenantId ?? null
+  } catch {
+    return null
+  }
+}
+
 export async function POST(req: NextRequest) {
   const user = await getSessionUser()
   if (!user?.tenantId || user.role !== 'owner') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -39,7 +49,7 @@ export async function POST(req: NextRequest) {
   if (tx.currency !== 'GHS' || Number(tx.amount) < plan.priceGHS * 100) {
     return NextResponse.json({ error: 'Payment amount does not match the plan' }, { status: 400 })
   }
-  if (tx.metadata?.tenantId && tx.metadata.tenantId !== user.tenantId) {
+  if (metadataTenantId(tx.metadata) !== user.tenantId) {
     return NextResponse.json({ error: 'Payment belongs to another account' }, { status: 400 })
   }
 

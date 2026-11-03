@@ -1,5 +1,7 @@
 'use server'
 import { adminDb, adminAuth } from '@/lib/firebase-admin'
+import { getTenantId } from '@/lib/auth'
+import { isPaidPlanActive } from '@/lib/billing/plans'
 import type { Tenant, TenantPlan } from '@/lib/types'
 
 const col = () => adminDb.collection('tenants')
@@ -20,19 +22,15 @@ async function uniqueSlug(base: string): Promise<string> {
 }
 
 export async function getTenant(tenantId: string): Promise<Tenant | null> {
+  const callerTenantId = await getTenantId()
+  if (!callerTenantId || callerTenantId !== tenantId) return null
   const doc = await col().doc(tenantId).get()
   if (!doc.exists) return null
   return { id: doc.id, ...doc.data() } as Tenant
 }
 
-export async function getTenantBySlug(slug: string): Promise<Tenant | null> {
-  const snap = await col().where('slug', '==', slug).limit(1).get()
-  if (snap.empty) return null
-  const d = snap.docs[0]
-  return { id: d.id, ...d.data() } as Tenant
-}
-
-export async function createTenant(data: {
+// Not exported: everything exported from this file can be called from the browser.
+async function createTenant(data: {
   name: string
   ownerId: string
   plan?: TenantPlan
@@ -59,15 +57,8 @@ export async function createTenant(data: {
   return { id: ref.id, ...doc }
 }
 
-export async function updateTenantPlan(
-  tenantId: string,
-  data: { plan?: TenantPlan; subscriptionStatus?: Tenant['subscriptionStatus']; paystackCustomerCode?: string; paystackSubscriptionCode?: string }
-): Promise<void> {
-  await col().doc(tenantId).update({ ...data, updatedAt: new Date().toISOString() })
-}
-
 export async function isTrialActive(tenant: Tenant): Promise<boolean> {
-  if (tenant.subscriptionStatus === 'active') return true
+  if (isPaidPlanActive(tenant)) return true
   if (tenant.subscriptionStatus !== 'trialing') return false
   return new Date(tenant.trialEndsAt) > new Date()
 }

@@ -2,7 +2,7 @@
 import { revalidatePath } from 'next/cache'
 import { adminDb, docData, FieldValue } from '@/lib/firebase-admin'
 import { ApprenticeSchema } from '@/lib/validation'
-import { getTenantId, assertOwned } from '@/lib/auth'
+import { getTenantId, requireTenant, getOwnedDoc, assertOwned } from '@/lib/auth'
 import type { Apprentice, ProgressNote, SkillSignOff } from '@/lib/types'
 
 export async function getApprentices(locationId?: string | null): Promise<Apprentice[]> {
@@ -22,19 +22,19 @@ export async function createApprentice(data: {
   expectedGraduationDate?: string | null; programDurationMonths?: number | null
   specialtiesLearning?: string; stipend?: number | null; notes?: string
 }): Promise<Apprentice> {
-  const tenantId = await getTenantId()
+  const { tenantId } = await requireTenant()
   const parsed = ApprenticeSchema.parse({
     ...data,
     stage: data.stage as 'beginner' | 'intermediate' | 'advanced',
   })
   let mentorName: string | null = null
   if (parsed.mentorId) {
-    const staffDoc = await adminDb.collection('staff').doc(parsed.mentorId).get()
+    const { snap: staffDoc } = await getOwnedDoc('staff', parsed.mentorId, tenantId)
     mentorName = staffDoc.data()?.name ?? null
   }
   let locationName: string | null = null
   if (parsed.locationId) {
-    const locDoc = await adminDb.collection('locations').doc(parsed.locationId).get()
+    const { snap: locDoc } = await getOwnedDoc('locations', parsed.locationId, tenantId)
     locationName = locDoc.data()?.name ?? null
   }
   const skills = (data.specialtiesLearning ?? '').split(',').filter(s => s.trim())
@@ -50,7 +50,7 @@ export async function createApprentice(data: {
     name: parsed.name,
     phone: data.phone || null,
     email: data.email || null,
-    tenantId: tenantId ?? null,
+    tenantId,
     mentorId: parsed.mentorId ?? null,
     mentorName,
     locationId: parsed.locationId ?? null,
@@ -80,14 +80,15 @@ export async function updateApprentice(id: string, data: {
   expectedGraduationDate?: string | null; programDurationMonths?: number | null
   specialtiesLearning?: string; stipend?: number | null; notes?: string; status?: string
 }): Promise<Apprentice> {
-  await assertOwned('apprentices', id)
+  const { tenantId } = await requireTenant()
+  await getOwnedDoc('apprentices', id, tenantId)
   const { status, mentorId, locationId, programDurationMonths, specialtiesLearning, ...rest } = data
   const parsed = ApprenticeSchema.partial().parse(rest)
   let mentorName: string | null | undefined = undefined
   if (mentorId !== undefined) {
     mentorName = null
     if (mentorId) {
-      const staffDoc = await adminDb.collection('staff').doc(mentorId).get()
+      const { snap: staffDoc } = await getOwnedDoc('staff', mentorId, tenantId)
       mentorName = staffDoc.data()?.name ?? null
     }
   }
@@ -95,7 +96,7 @@ export async function updateApprentice(id: string, data: {
   if (locationId !== undefined) {
     locationName = null
     if (locationId) {
-      const locDoc = await adminDb.collection('locations').doc(locationId).get()
+      const { snap: locDoc } = await getOwnedDoc('locations', locationId, tenantId)
       locationName = locDoc.data()?.name ?? null
     }
   }

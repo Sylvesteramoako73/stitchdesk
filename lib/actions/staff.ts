@@ -2,7 +2,7 @@
 import { revalidatePath } from 'next/cache'
 import { adminDb, docData } from '@/lib/firebase-admin'
 import { StaffSchema } from '@/lib/validation'
-import { getTenantId, assertOwned } from '@/lib/auth'
+import { getTenantId, requireTenant, getOwnedDoc, assertOwned } from '@/lib/auth'
 import type { Staff, StaffWithStats } from '@/lib/types'
 
 export async function getStaff(locationId?: string | null): Promise<Staff[]> {
@@ -64,18 +64,18 @@ export async function createStaff(data: {
   specialties?: string; commissionRate?: number; systemRole?: string
   locationId?: string | null
 }): Promise<Staff> {
-  const tenantId = await getTenantId()
+  const { tenantId } = await requireTenant()
   const parsed = StaffSchema.parse({ ...data, commissionRate: data.commissionRate ?? 30 })
   let locationName: string | null = null
   if (parsed.locationId) {
-    const locDoc = await adminDb.collection('locations').doc(parsed.locationId).get()
+    const { snap: locDoc } = await getOwnedDoc('locations', parsed.locationId, tenantId)
     locationName = locDoc.data()?.name ?? null
   }
   const ref = adminDb.collection('staff').doc()
   const now = new Date().toISOString()
   const doc = {
     ...parsed,
-    tenantId: tenantId ?? null,
+    tenantId,
     phone: data.phone ?? null,
     email: data.email ?? null,
     specialties: data.specialties ?? '',
@@ -100,14 +100,15 @@ export async function updateStaff(id: string, data: {
   specialties?: string; commissionRate?: number; isActive?: boolean; systemRole?: string
   workingHours?: Record<string, unknown>; locationId?: string | null
 }): Promise<Staff> {
-  await assertOwned('staff', id)
+  const { tenantId } = await requireTenant()
+  await getOwnedDoc('staff', id, tenantId)
   const { isActive, workingHours, locationId, ...rest } = data
   const parsed = StaffSchema.partial().parse(rest)
   let locationName: string | null | undefined = undefined
   if (locationId !== undefined) {
     locationName = null
     if (locationId) {
-      const locDoc = await adminDb.collection('locations').doc(locationId).get()
+      const { snap: locDoc } = await getOwnedDoc('locations', locationId, tenantId)
       locationName = locDoc.data()?.name ?? null
     }
   }
@@ -126,6 +127,7 @@ export async function updateStaff(id: string, data: {
     const staffEmail = staffDoc.data()?.email
     if (staffEmail) {
       const userSnap = await adminDb.collection('users')
+        .where('tenantId', '==', tenantId)
         .where('email', '==', staffEmail)
         .limit(1)
         .get()
